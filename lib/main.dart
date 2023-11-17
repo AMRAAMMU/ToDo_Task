@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
+import 'package:notes/screens/notes_screen.dart';
 import 'dart:convert';
-
-import 'notes_screen.dart';
 
 void main() {
   runApp(MyApp());

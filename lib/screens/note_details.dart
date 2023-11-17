@@ -1,221 +1,99 @@
 import 'package:flutter/material.dart';
-import '../note.dart';
-
+import 'package:get/get.dart';
+import 'package:notes/controllers/crud_controllers.dart';
+import 'package:notes/screens/notes_screen.dart';
 
 class NotesDetails extends StatefulWidget {
-  final Note note;
-
-  const NotesDetails({Key? key, required this.note}) : super(key: key);
+  const NotesDetails({Key? key}) : super(key: key);
 
   @override
-  _NotesDetailsState createState() => _NotesDetailsState();
+  NotesDetailsState createState() => NotesDetailsState();
 }
 
-class _NotesDetailsState extends State<NotesDetails> {
-  late TextEditingController _titleController;
-  late TextEditingController _contentController;
+class NotesDetailsState extends State<NotesDetails> {
+  TextEditingController _titleController = TextEditingController();
+  TextEditingController _contentController = TextEditingController();
   bool _isEditing = false;
 
   @override
-  void initState() {
-    super.initState();
-    _titleController = TextEditingController(text: widget.note.title);
-    _contentController = TextEditingController(text: widget.note.content);
-  }
-
-  @override
   Widget build(BuildContext context) {
+    final arg = Get.arguments;
+    final controller = Get.put(NotesScreenController());
+    _titleController = TextEditingController(text: arg.title);
+    _contentController = TextEditingController(text: arg.description);
+
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       backgroundColor: Colors.grey.shade900,
       appBar: AppBar(
         backgroundColor: Colors.grey.shade900,
+        iconTheme: IconThemeData(color: Colors.white),
         actions: [
           IconButton(
-            icon: _isEditing ? Icon(Icons.save) : Icon(Icons.edit),
+            icon: const Icon(Icons.edit, color: Colors.white),
             onPressed: () {
-              if (_isEditing) {
-                _showSaveAlert();
-              } else {
-                setState(() {
-                  _isEditing = true;
-                });
-              }
+              setState(() {
+
+                _isEditing = !_isEditing;
+                if (!_isEditing) {
+
+                  _titleController.text = arg.title;
+                  _contentController.text = arg.description;
+                }
+              });
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.save, color: Colors.white),
+            onPressed: () {
+              controller.updateNote(
+                title: _titleController.text,
+                description: _contentController.text,
+                id: arg.id,
+              );
+              Get.offAll(NotesScreen());
             },
           ),
         ],
       ),
       body: Padding(
-        padding: EdgeInsets.only(left: 16, top: 16),
+        padding: const EdgeInsets.only(left: 16, top: 16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             TextFormField(
               controller: _titleController,
-              style: TextStyle(fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white),
+              style: const TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
               readOnly: !_isEditing,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 hintText: 'Title',
-                hintStyle: TextStyle(color: Colors.grey,
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold),
-                border: InputBorder.none, // Remove input border
+                hintStyle: TextStyle(
+                  color: Colors.grey,
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+                border: InputBorder.none,
               ),
             ),
-            SizedBox(height: 12),
+            const SizedBox(height: 12),
             TextFormField(
               controller: _contentController,
-              style: TextStyle(fontSize: 18, color: Colors.white),
+              style: const TextStyle(fontSize: 18, color: Colors.white),
               readOnly: !_isEditing,
               maxLines: 22,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 hintText: 'Content',
                 hintStyle: TextStyle(color: Colors.grey, fontSize: 18),
-                border: InputBorder.none, // Remove input border
+                border: InputBorder.none,
               ),
             ),
           ],
         ),
       ),
     );
-  }
-
-  void _showSaveAlert() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: Colors.grey.shade800,
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Info Icon
-              Icon(
-                Icons.info_outline,
-                color: Colors.grey,
-                size: 40,
-              ),
-              SizedBox(height: 10),
-              Text(
-                "Save Changes?",
-                style: TextStyle(color: Colors.white, fontSize: 25),
-                textAlign: TextAlign.center,
-              ),
-              SizedBox(height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Expanded(
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        primary: Colors.red,
-                        padding: EdgeInsets.symmetric(horizontal: 20),
-                      ),
-                      onPressed: () {
-                        Navigator.pop(context);
-                      },
-                      child: Text(
-                        "Cancel",
-                        style: TextStyle(color: Colors.white, fontSize: 20),
-                      ),
-                    ),
-                  ),
-                  SizedBox(width: 10),
-                  Expanded(
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        primary: Colors.green,
-                        padding: EdgeInsets.symmetric(horizontal: 20),
-                      ),
-                      onPressed: () {
-                        Navigator.pop(context, widget.note);
-                      },
-                      child: Text(
-                        "Save",
-                        style: TextStyle(color: Colors.white, fontSize: 20),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        );
-      },
-    ).then((result) {
-      // Show another alert when "Cancel" is pressed or "Keep" is pressed
-      if (result == null) {
-        _showDiscardAlert();
-      }
-    });
-  }
-
-  void _showDiscardAlert() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: Colors.grey.shade800,
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Info Icon
-              Icon(
-                Icons.info_outline,
-                color: Colors.grey,
-                size: 40,
-              ),
-              SizedBox(height: 10),
-              Text(
-                "Are you sure you want to discard your changes?",
-                style: TextStyle(color: Colors.white, fontSize: 25),
-                textAlign: TextAlign.center,
-              ),
-              SizedBox(height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Expanded(
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        primary: Colors.red,
-                      ),
-                      onPressed: () {
-                        Navigator.pop(context);
-                      },
-                      child: Text(
-                        "Discard",
-                        style: TextStyle(color: Colors.white),
-                      ),
-                    ),
-                  ),
-                  SizedBox(width: 10),
-                  Expanded(
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        primary: Colors.green,
-                      ),
-                      onPressed: () {
-                        Navigator.pop(context, true);
-                      },
-                      child: Text(
-                        "Keep",
-                        style: TextStyle(color: Colors.white),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        );
-      },
-    ).then((secondResult) {
-      if (secondResult == true) {
-        // User confirmed to cancel changes, show the first alert box again
-        _showSaveAlert();
-      }
-    });
   }
 }

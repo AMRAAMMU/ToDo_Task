@@ -1,8 +1,3 @@
-// To parse this JSON data, do
-//
-//     final getnotesmodel = getnotesmodelFromJson(jsonString);
-
-import 'package:meta/meta.dart';
 import 'dart:convert';
 
 Getnotesmodel getnotesmodelFromJson(String str) => Getnotesmodel.fromJson(json.decode(str));

@@ -1,15 +1,35 @@
 import 'package:flutter/material.dart';
-import 'package:notes/note.dart';
+import 'package:get/get.dart';
+import 'package:notes/controllers/crud_controllers.dart';
+import 'package:notes/models/getmodel.dart';
+import 'package:notes/search.dart';
 import 'note_details.dart';
 import 'notes_add.dart';
 
 class NotesScreen extends StatefulWidget {
+  const NotesScreen({Key? key});
+
   @override
   State<NotesScreen> createState() => _NotesScreenState();
 }
 
 class _NotesScreenState extends State<NotesScreen> {
-  List<Note> notes = [];
+  final controllers = Get.put(NotesScreenController());
+
+  @override
+  void initState() {
+    super.initState();
+    fetchNotes();
+  }
+
+  void fetchNotes() async {
+    List<Getnotesmodel> fetchedNotes = await controllers.getNotes();
+    setState(() {
+      notesList = fetchedNotes;
+    });
+  }
+
+  List<Getnotesmodel> notesList = [];
 
   List<Color> containerColors = [
     Colors.purpleAccent.shade100,
@@ -19,18 +39,12 @@ class _NotesScreenState extends State<NotesScreen> {
     Colors.orangeAccent.shade100,
   ];
 
-  void _onContainerTap(Note selectedNote) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => NotesDetails(note: selectedNote),
-      ),
-    );
-  }
+  void onContainerTap(Getnotesmodel selectedNote) {}
 
   void _onDeleteIconTap(int index) {
+    controllers.deleteNote(id: notesList[index].id);
     setState(() {
-      notes.removeAt(index);
+      notesList.removeAt(index);
     });
   }
 
@@ -40,23 +54,120 @@ class _NotesScreenState extends State<NotesScreen> {
       backgroundColor: Colors.grey.shade900,
       appBar: AppBar(
         backgroundColor: Colors.grey.shade900,
-        title: Text(
+        title: const Text(
           'Notes',
           style: TextStyle(
             fontWeight: FontWeight.w600,
             fontSize: 25,
+            color: Colors.white,
           ),
         ),
         actions: [
           IconButton(
-            icon: Icon(Icons.search),
-            onPressed: () {},
+            icon: const Icon(Icons.search, color: Colors.white),
+            onPressed: () {
+              showSearch(
+                context: context,
+                delegate: NotesSearchDelegate(
+                  notesList: notesList,
+                  resetNotes: fetchNotes,
+                ),
+              );
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.info_outline, color: Colors.white),
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (BuildContext context) {
+                  return AlertDialog(alignment: Alignment.center,
+                    title: const Text('Designed by-\nRedesigned by-\nIllustration-\nIcons-\nFonts-'),
+                    actions: [
+                      TextButton(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                        },
+                        child: const Text('OK'),
+                      ),
+                    ],
+                  );
+                },
+              );
+            },
           ),
         ],
       ),
-      body: Center(
-        child: notes.isEmpty
-            ? Column(
+      body: notesList.isNotEmpty
+          ? Column(children: [
+        Expanded(
+          child: ListView.builder(
+            scrollDirection: Axis.vertical,
+            itemCount: notesList.length,
+            itemBuilder: (context, index) {
+              return Dismissible(
+                key: Key(notesList[index].id.toString()),
+                onDismissed: (direction) {
+                  _onDeleteIconTap(index);
+                },
+                background: Container(
+                  color: Colors.red,
+                  alignment: Alignment.centerRight,
+                  padding: const EdgeInsets.only(right: 16),
+                  child: const Icon(
+                    Icons.delete,
+                    color: Colors.white,
+                  ),
+                ),
+                child: GestureDetector(
+                  onTap: () {
+                    Get.to(() => const NotesDetails(),
+                        arguments: notesList[index]);
+                  },
+                  child: Container(
+                    margin: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: containerColors[
+                      index % containerColors.length],
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment:
+                          MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              notesList[index].title,
+                              style: const TextStyle(
+                                color: Colors.black,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const Icon(
+                              Icons.chevron_left,
+                              color: Colors.white,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          notesList[index].description,
+                          style: const TextStyle(color: Colors.black),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ])
+          : Center(
+        child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Image.asset(
@@ -64,8 +175,8 @@ class _NotesScreenState extends State<NotesScreen> {
               width: 200,
               height: 200,
             ),
-            SizedBox(height: 8),
-            Text(
+            const SizedBox(height: 8),
+            const Text(
               'Create your first note!',
               style: TextStyle(
                 fontSize: 16,
@@ -73,89 +184,22 @@ class _NotesScreenState extends State<NotesScreen> {
               ),
             ),
           ],
-        )
-            : ListView.builder(
-          itemCount: notes.length,
-          itemExtent: 110,
-          itemBuilder: (context, index) {
-            return Dismissible(
-              key: Key(notes[index].id.toString()),
-              onDismissed: (direction) {
-                _onDeleteIconTap(index);
-              },
-              background: Container(
-                color: Colors.red,
-                alignment: Alignment.centerRight,
-                padding: EdgeInsets.only(right: 16),
-                child: Icon(
-                  Icons.delete,
-                  color: Colors.white,
-                ),
-              ),
-              child: GestureDetector(
-                onTap: () {
-                  _onContainerTap(notes[index]);
-                },
-                child: Container(
-                  margin: EdgeInsets.all(16),
-                  padding: EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: containerColors[index % containerColors.length],
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            notes[index].title,
-                            style: TextStyle(color: Colors.white),
-                          ),
-                          Icon(
-                            Icons.delete,
-                            color: Colors.white,
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 6),
-                      Expanded(
-                        child: SingleChildScrollView(
-                          child: Text(
-                            notes[index].content,
-                            style: TextStyle(color: Colors.white),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          },
         ),
       ),
       floatingActionButton: Container(
-        margin: EdgeInsets.only(bottom: 16),
+        margin: const EdgeInsets.only(bottom: 16),
         child: FloatingActionButton(
           onPressed: () async {
             final newNote = await Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => NotesAdd()),
+              MaterialPageRoute(builder: (context) => const NotesAdd()),
             );
-            if (newNote != null) {
-              setState(() {
-                notes.add(newNote);
-              });
-            }
           },
-          child: Icon(Icons.add),
           backgroundColor: Colors.grey.shade900,
+          child: const Icon(Icons.add, color: Colors.white),
         ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endDocked,
     );
   }
 }
-
